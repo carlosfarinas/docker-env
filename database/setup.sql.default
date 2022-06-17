@@ -1,0 +1,8 @@
+CREATE DATABASE TASETL;
+GO
+USE TASETL;
+GO
+CREATE LOGIN [tas-finance] WITH PASSWORD = '${SA_PASSWORD}';
+GO
+CREATE USER [tas-finance] FOR LOGIN [tas-finance];
+GO

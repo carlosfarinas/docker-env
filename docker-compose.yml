@@ -1,0 +1,58 @@
+version: '3.3'
+services:
+  wp-web:
+    build:
+      context: ./
+      dockerfile: nginx.dockerfile
+    image: wp-web
+    restart: always
+    ports:
+      - target: 80
+        published: 80
+        protocol: tcp
+        mode: host
+      - target: 3000
+        published: 3000
+        protocol: tcp
+        mode: host
+    depends_on:
+      - wp-php
+    links:
+      - wp-php
+    volumes:
+      - ./wp:/var/www
+  wp-php:
+    build:
+      context: ./
+      dockerfile: php.dockerfile
+    image: wp-php
+    environment:
+      php_app_1_EXTENSION_XDEBUG_ENABLE: 1
+      php_app_1_EXTENSION_XDEBUG_PORT: 9000
+    depends_on:
+      - wp-redis
+    links:
+      - wp-redis
+    volumes:
+      - ./wp:/var/www
+  wp-database:
+    build:
+      context: ./
+      dockerfile: database.dockerfile
+    image: wp-database
+    container_name: wp-database
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: Merlin123
+    ports:
+      - target: 1433
+        published: 1433
+        protocol: tcp
+        mode: host
+    links:
+      - wp-php
+  wp-redis:
+    build:
+      context: ./
+      dockerfile: redis.dockerfile
+    image: wp-redis

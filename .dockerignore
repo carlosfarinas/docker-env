@@ -1,0 +1,12 @@
+*.idea
+wp/vendor/*
+wp/storage/app/*
+wp/storage/debugbar/
+wp/storage/framework/cache/*
+wp/storage/framework/sessions/*
+wp/storage/framework/testing/*
+wp/storage/framework/views/*
+wp/bootstrap/cache/*
+wp/storage/logs/*
+wp/node_modules/*
+wp/.git/
