@@ -1,4 +1,4 @@
-FROM php:7.4-fpm-buster
+FROM php:8.0-fpm-buster AS base
 
 #Env Path
 ENV HOME="/root"
@@ -27,9 +27,9 @@ RUN curl -sS -o - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-ke
 
 #UnixODBC Manually Install Debian Strech doesn't support the latest version and is causing issues with connection pooling
 # hense why this is a manual install
-RUN  cd ~ && wget ftp://ftp.unixodbc.org/pub/unixODBC/unixODBC-2.3.7.tar.gz && \
-     tar xvzf unixODBC-2.3.7.tar.gz && cd unixODBC-2.3.7 && ./configure && make && make install && \
-     cd ~ && rm unixODBC-2.3.7.tar.gz && rm -rf unixODBC-2.3.7
+RUN  cd ~ && wget ftp://ftp.unixodbc.org/pub/unixODBC/unixODBC-2.3.9.tar.gz && \
+     tar xvzf unixODBC-2.3.9.tar.gz && cd unixODBC-2.3.9 && ./configure && make && make install && \
+     cd ~ && rm unixODBC-2.3.9.tar.gz && rm -rf unixODBC-2.3.9
 
 # Install MSSQL Repos
 RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
@@ -38,25 +38,25 @@ RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
 # Install Required Libs
 # When you upgrade the sql server driver also update the odbcinst.ini drive to keep the connection pooling.
 # If not the performance will be degrated to a single connection.
-RUN apt-get update && ACCEPT_EULA=Y apt-get -y install libzip-dev unzip apt-utils locales zlib1g-dev libldap2-dev libpng-dev
-RUN ACCEPT_EULA=Y apt-get -y install msodbcsql17 && \
-    ACCEPT_EULA=Y apt-get -y install mssql-tools
-
+RUN apt-get update && ACCEPT_EULA=Y apt-get install libzip-dev unzip libicu-dev apt-utils locales zlib1g-dev libldap2-dev msodbcsql17=17.8.1.1-1 mssql-tools -y libpng-dev
 
 #Pecl Install
 RUN docker-php-ext-install zip && \
-    docker-php-ext-enable zip && \
-    pecl install redis-5.1.1 && \
-    docker-php-ext-enable redis && \
-    pecl install pdo_sqlsrv-5.8.0 && \
+    docker-php-ext-enable zip
+
+RUN pecl install redis-5.3.5 && \
+    docker-php-ext-enable redis
+
+RUN pecl install pdo_sqlsrv-5.9.0 && \
     docker-php-ext-enable pdo_sqlsrv && \
-    pecl install sqlsrv-5.8.0 && \
-    docker-php-ext-enable sqlsrv && \
-    docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ && \
+    pecl install sqlsrv-5.9.0 && \
+    docker-php-ext-enable sqlsrv
+
+RUN docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ && \
     docker-php-ext-install ldap && \
     docker-php-ext-install opcache && \
-    pecl install xdebug && \
-    docker-php-ext-enable xdebug
+    docker-php-ext-configure intl && \
+    docker-php-ext-install intl
 
 #SQL Server Post Install
 RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && locale-gen
@@ -78,6 +78,7 @@ COPY php/php-fpm.d/www.conf /usr/local/etc/php-fpm.d/www.conf
 COPY php/php-fpm.conf /usr/local/etc/php-fpm.conf
 
 #xdebug
+RUN pecl install xdebug-3.1.2 && docker-php-ext-enable xdebug
 RUN mkdir -p /tmp/xdebug_log/ &&\
     touch /tmp/xdebug_log/xdebug.log &&\
     chmod 777 /tmp/xdebug_log/xdebug.log
